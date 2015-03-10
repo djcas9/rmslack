@@ -1,8 +1,9 @@
+VERSION=$(shell cat rmslack.go | grep -oP "Version\s+?\=\s?\"\K.*?(?=\"$|$\)")
 NAME="rmslack"
-DESCRIPTION="Remove all messages for a given Slack channel"
 
-# VERSION=$(shell cat $(NAME).go | grep -oP "Version\s+?\=\s?\"\K.*?(?=\"$|$\)")
-CWD=$(shell pwd)
+CCOS="windows freebsd darwin linux"
+CCARCH="386 amd64"
+CCOUTPUT="pkg/{{.OS}}-{{.Arch}}/$(NAME)"
 
 NO_COLOR=\033[0m
 OK_COLOR=\033[32;01m
@@ -19,7 +20,7 @@ endif
 
 all: deps
 	@mkdir -p bin/
-	@$(ECHO) "$(OK_COLOR)==> Building $(NAME) $(NO_COLOR)"
+	@$(ECHO) "$(OK_COLOR)==> Building $(NAME) - $(VERSION) $(NO_COLOR)"
 	@godep go build -o bin/$(NAME)
 	@chmod +x bin/$(NAME)
 	@$(ECHO) "$(OK_COLOR)==> Done$(NO_COLOR)"
@@ -35,24 +36,34 @@ updatedeps:
 	@echo $(DEPS) | xargs -n1 go get -d -u
 	@godep update ...
 
-bindata:
-	@$(ECHO) "$(OK_COLOR)==> Embedding Assets$(NO_COLOR)"
-	@go-bindata -debug web/...
-
 test: deps
 	@$(ECHO) "$(OK_COLOR)==> Testing $(NAME)...$(NO_COLOR)"
-	go test ./...
+	godep go test ./...
 
 goxBuild:
-	gox -build-toolchain
+	@gox -os=$(CCOS) -arch=$(CCARCH) -build-toolchain
 
 gox: 
-	@$(ECHO) "$(OK_COLOR)==> GOX BroTop...$(NO_COLOR)"
-	gox output="pkg/{{.OS}}-{{.Arch}}/brotop"
+	@$(ECHO) "$(OK_COLOR)==> Cross Compiling $(NAME)$(NO_COLOR)"
+	@mkdir -p Godeps/_workspace/src/github.com/mephux/rmslack
+	@cp -R *.go Godeps/_workspace/src/github.com/mephux/rmslack
+	@GOPATH=$(shell godep path) gox -os=$(CCOS) -arch=$(CCARCH) -output=$(CCOUTPUT)
+	@rm -rf Godeps/_workspace/src/github.com/mephux/rmslack
+
+release: clean all gox
+	@mkdir -p release/
+	@echo $(VERSION) > .Version
+	@echo $(CCOS) | xargs -n1 | xargs -I % tar -zcvf release/$(NAME)-%-amd64.tar.gz pkg/%-amd64/$(NAME)
+	@echo $(CCOS) | xargs -n1 | xargs -I % tar -zcvf release/$(NAME)-%-386.tar.gz pkg/%-386/$(NAME)
+	@$(ECHO) "$(OK_COLOR)==> Done Cross Compiling $(NAME)$(NO_COLOR)"
 
 clean:
-	rm -rf bin/
-	rm -rf pkg/
+	@$(ECHO) "$(OK_COLOR)==> Cleaning$(NO_COLOR)"
+	@rm -rf Godeps/_workspace/src/github.com/mephux/rmslack
+	@rm -rf .Version
+	@rm -rf release/
+	@rm -rf bin/
+	@rm -rf pkg/
 
 install: clean all
 
