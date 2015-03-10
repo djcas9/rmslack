@@ -56,7 +56,7 @@ release: clean all gox
 	@for os in $(CCOS); do \
 		for arch in $(CCARCH); do \
 			cd pkg/$$os-$$arch/; \
-			tar -zcvf ../../release/$(NAME)-$$os-$$arch.tar.gz . > /dev/null 2>&1; \
+			tar -zcvf ../../release/$(NAME)-$$os-$$arch.tar.gz rmslack* > /dev/null 2>&1; \
 			cd ../../; \
 		done \
 	done
