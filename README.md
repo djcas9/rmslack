@@ -1,6 +1,8 @@
 # rmslack
 
-Remove all messages from a given slack channel.
+[![Build Status](http://104.236.125.70/api/badge/github.com/mephux/rmslack/status.svg?branch=master)](http://104.236.125.70/github.com/mephux/rmslack)
+
+Remove all messages from a given slack channel. Stupid little app but helpful.
 
 # Why
 

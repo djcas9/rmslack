@@ -1,8 +1,8 @@
 VERSION=$(shell cat rmslack.go | grep -oP "Version\s+?\=\s?\"\K.*?(?=\"$|$\)")
 NAME="rmslack"
 
-CCOS="windows freebsd darwin linux"
-CCARCH="386 amd64"
+CCOS=windows freebsd darwin linux
+CCARCH=386 amd64
 CCOUTPUT="pkg/{{.OS}}-{{.Arch}}/$(NAME)"
 
 NO_COLOR=\033[0m
@@ -41,20 +41,25 @@ test: deps
 	godep go test ./...
 
 goxBuild:
-	@gox -os=$(CCOS) -arch=$(CCARCH) -build-toolchain
+	@gox -os="$(CCOS)" -arch="$(CCARCH)" -build-toolchain
 
 gox: 
 	@$(ECHO) "$(OK_COLOR)==> Cross Compiling $(NAME)$(NO_COLOR)"
 	@mkdir -p Godeps/_workspace/src/github.com/mephux/rmslack
 	@cp -R *.go Godeps/_workspace/src/github.com/mephux/rmslack
-	@GOPATH=$(shell godep path) gox -os=$(CCOS) -arch=$(CCARCH) -output=$(CCOUTPUT)
+	@GOPATH=$(shell godep path) gox -os="$(CCOS)" -arch="$(CCARCH)" -output=$(CCOUTPUT)
 	@rm -rf Godeps/_workspace/src/github.com/mephux/rmslack
 
 release: clean all gox
 	@mkdir -p release/
 	@echo $(VERSION) > .Version
-	@echo $(CCOS) | xargs -n1 | xargs -I % tar -zcvf release/$(NAME)-%-amd64.tar.gz pkg/%-amd64/$(NAME)
-	@echo $(CCOS) | xargs -n1 | xargs -I % tar -zcvf release/$(NAME)-%-386.tar.gz pkg/%-386/$(NAME)
+	@for os in $(CCOS); do \
+		for arch in $(CCARCH); do \
+			cd pkg/$$os-$$arch/; \
+			tar -zcvf ../../release/$(NAME)-$$os-$$arch.tar.gz . > /dev/null 2>&1; \
+			cd ../../; \
+		done \
+	done
 	@$(ECHO) "$(OK_COLOR)==> Done Cross Compiling $(NAME)$(NO_COLOR)"
 
 clean:
