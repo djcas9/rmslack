@@ -11,39 +11,39 @@ import (
 )
 
 const (
-	Name        = "rmslack"
-	Version     = "0.1.0"
-	Description = "Remove all messages for a given Slack channel"
+	name        = "rmslack"
+	version     = "0.1.1"
+	description = "Remove all messages for a given Slack channel"
 )
 
 var (
-	SlackToken = kingpin.Flag("token", "Slack account token.").Short('t').Required().String()
-	Quiet      = kingpin.Flag("quiet", "Remove all output logging.").Short('q').Bool()
-	Debug      = kingpin.Flag("debug", "Enable debug mode.").Bool()
+	slackToken = kingpin.Flag("token", "Slack account token.").Short('t').Required().String()
+	quiet      = kingpin.Flag("quiet", "Remove all output logging.").Short('q').Bool()
+	debug      = kingpin.Flag("debug", "Enable debug mode.").Bool()
 )
 
 func init() {
-	kingpin.Version(Version)
+	kingpin.Version(version)
 	kingpin.Parse()
 
 	log.SetOutput(os.Stderr)
 
-	if *Debug {
+	if *debug {
 		log.SetLevel(log.DebugLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}
 
-	if *Quiet {
+	if *quiet {
 		log.SetLevel(log.FatalLevel)
 	}
 
 }
 
 func main() {
-	log.Infof("Initializing %s Version: %s.", Name, Version)
+	log.Infof("Initializing %s Version: %s.", name, version)
 
-	api := slack.New(*SlackToken)
+	api := slack.New(*slackToken)
 
 	params := slack.NewHistoryParameters()
 
@@ -56,28 +56,28 @@ func main() {
 	log.Infof("Fetching channel list.\n")
 
 	for i, channel := range channels {
-		fmt.Printf("[%d] %s (%s)\n", i, channel.Name, channel.Id)
+		fmt.Printf("[%d] %s (%s)\n", i, channel.Name, channel.ID)
 	}
 
 	fmt.Println("\nWhich channel would you like to purge messages from?")
 
-	var channel_id int
-	if _, err := fmt.Scanf("%d", &channel_id); err != nil {
+	var channelID int
+	if _, err := fmt.Scanf("%d", &channelID); err != nil {
 		log.Fatal(err)
 	}
 
-	if channel_id > len(channels) || channel_id < 0 {
+	if channelID > len(channels) || channelID < 0 {
 		log.Error("The channel you selected is not a valid option.")
 		os.Exit(1)
 	}
 
-	log.Infof("Fetching history for channel: %s", channels[channel_id].Name)
+	log.Infof("Fetching history for channel: %s", channels[channelID].Name)
 
-	DeleteChannelMessages(channels[channel_id].Id, api, params)
+	deleteChannelMessages(channels[channelID].ID, api, params)
 	log.Info("All Done!")
 }
 
-func DeleteChannelMessages(id string, api *slack.Slack, params slack.HistoryParameters) {
+func deleteChannelMessages(id string, api *slack.Client, params slack.HistoryParameters) {
 	history, err := api.GetChannelHistory(id, params)
 
 	if err != nil {
@@ -111,5 +111,5 @@ func DeleteChannelMessages(id string, api *slack.Slack, params slack.HistoryPara
 
 	wg.Wait()
 
-	DeleteChannelMessages(id, api, params)
+	deleteChannelMessages(id, api, params)
 }
