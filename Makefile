@@ -12,7 +12,7 @@ BUILD_COUNT=$(shell git rev-list --count HEAD)
 
 BUILD_TAG="${BUILD_COUNT}.${SHA}"
 
-build: banner lint generate
+build: banner generate
 	@echo "Building $(NAME)..."
 	@mkdir -p bin/
 	@go build \
